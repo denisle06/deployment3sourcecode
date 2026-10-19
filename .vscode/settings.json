@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/caeaf7ae-0908-43bc-8127-c42beccc794a/resourceGroups/duc/providers/Microsoft.Web/sites/superphpthingythatisunusuallylong",
+    "appService.deploySubpath": "part3\\DueSoon\\DueSoon"
+}

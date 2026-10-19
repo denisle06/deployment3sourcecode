@@ -1,0 +1,89 @@
+@page
+@model PlannerModel
+@using GpaCalculator.Models
+@{
+    ViewData["Title"] = "Target planner";
+    var result = Model.Result;
+}
+
+<section class="intro">
+    <p class="eyebrow">Planner</p>
+    <h1>What do I need to reach my target?</h1>
+    <p class="lede">Enter where you are now and how many credit points are left. The planner works out the average mark you need across your remaining units.</p>
+</section>
+
+<div class="layout">
+    <form method="post" class="card form-grid" novalidate>
+        <div asp-validation-summary="ModelOnly" class="alert"></div>
+        <label>
+            <span>Current WAM</span>
+            <input asp-for="CurrentWam" type="number" step="0.01" min="0" max="100" />
+            <span asp-validation-for="CurrentWam" class="field-error"></span>
+        </label>
+        <label>
+            <span>Credit points completed</span>
+            <input asp-for="CompletedCreditPoints" type="number" step="0.5" min="0" max="1000" />
+            <span asp-validation-for="CompletedCreditPoints" class="field-error"></span>
+        </label>
+        <label>
+            <span>Credit points remaining</span>
+            <input asp-for="RemainingCreditPoints" type="number" step="0.5" min="0.5" max="1000" />
+            <span asp-validation-for="RemainingCreditPoints" class="field-error"></span>
+        </label>
+        <label>
+            <span>Target WAM</span>
+            <input asp-for="TargetWam" type="number" step="0.5" min="0" max="100" />
+            <span asp-validation-for="TargetWam" class="field-error"></span>
+        </label>
+        <div class="form-actions span-all">
+            <button type="submit" class="btn btn-primary">Work it out</button>
+        </div>
+    </form>
+
+    <aside class="card">
+        @if (result is null)
+        {
+            <h2>Your result</h2>
+            <p class="muted">Fill in the form to see the average you need. A typical Swinburne unit is 12.5 credit points, and a 3-year degree is 300.</p>
+        }
+        else
+        {
+            <h2>To reach a WAM of @Model.TargetWam.ToString("0.##")</h2>
+            @switch (result.Outcome)
+            {
+                case PlanOutcome.AlreadySecured:
+                    <p class="verdict ok">You've already secured it. Even marks of 0 in the remaining units would keep you at or above the target.</p>
+                    break;
+                case PlanOutcome.NotPossible:
+                    <p class="verdict bad">Not reachable. You'd need an average of <strong>@result.RequiredAverage.ToString("0.##")</strong>, which is above 100.</p>
+                    break;
+                default:
+                    <p class="big-number">@result.RequiredAverage.ToString("0.##")</p>
+                    <p class="verdict">average needed across your remaining @Model.RemainingCreditPoints.ToString("0.#") credit points:
+                        <span class="badge grade-@result.RequiredGrade!.Code.ToLowerInvariant()">@result.RequiredGrade.Code</span> level.</p>
+                    break;
+            }
+
+            <h3>Other targets</h3>
+            <table class="data-table">
+                <thead><tr><th>Target WAM</th><th class="num">Average needed</th></tr></thead>
+                <tbody>
+                    @foreach (var (target, plan) in Model.ScenarioResults)
+                    {
+                        <tr>
+                            <td>@target</td>
+                            <td class="num">
+                                @(plan.Outcome switch
+                                {
+                                    PlanOutcome.AlreadySecured => "Secured",
+                                    PlanOutcome.NotPossible => "Not reachable",
+                                    _ => plan.RequiredAverage.ToString("0.##")
+                                })
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </aside>
+</div>

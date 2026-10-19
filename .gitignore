@@ -1,0 +1,9 @@
+# Build output
+**/bin/
+**/obj/
+**/publish/
+.vs/
+*.zip
+
+# Microsoft's sample is already public (linked in the report) and has its own .git
+part1/

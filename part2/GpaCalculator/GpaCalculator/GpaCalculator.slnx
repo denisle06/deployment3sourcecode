@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GpaCalculator/GpaCalculator.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GpaCalculator.Tests/GpaCalculator.Tests.csproj" />
+  </Folder>
+</Solution>

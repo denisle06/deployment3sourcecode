@@ -1,0 +1,11 @@
+bin/
+obj/
+publish/
+*.user
+*.suo
+.vs/
+.vscode/*
+!.vscode/settings.json
+TestResults/
+*.zip
+.DS_Store

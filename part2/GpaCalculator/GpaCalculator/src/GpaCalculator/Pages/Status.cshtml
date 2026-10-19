@@ -1,0 +1,35 @@
+@page
+@model StatusModel
+@{
+    ViewData["Title"] = "Deployment status";
+    var i = Model.Info;
+    string Uptime(TimeSpan t) => t.TotalHours >= 1 ? $"{(int)t.TotalHours}h {t.Minutes}m" : $"{t.Minutes}m {t.Seconds}s";
+}
+
+<section class="intro">
+    <p class="eyebrow">Status</p>
+    <h1>Where is this app running?</h1>
+    <p class="lede">These values come from the environment variables Azure App Service sets on the app, so this page shows the deployment is live.</p>
+</section>
+
+<div class="card status-card">
+    <div class="status-head">
+        <span class="dot @(i.RunningOnAzure ? "dot-ok" : "dot-local")" aria-hidden="true"></span>
+        <strong>@(i.RunningOnAzure ? "Running on Azure App Service" : "Running locally (not on Azure)")</strong>
+    </div>
+    <dl class="kv">
+        <dt>Site name</dt><dd>@i.SiteName</dd>
+        <dt>Host name</dt><dd>@i.HostName</dd>
+        <dt>Region</dt><dd>@i.Region</dd>
+        <dt>Pricing tier</dt><dd>@i.Sku</dd>
+        <dt>Instance</dt><dd><code>@i.InstanceId</code></dd>
+        <dt>Environment</dt><dd>@i.Environment</dd>
+        <dt>Machine</dt><dd>@i.MachineName</dd>
+        <dt>Runtime</dt><dd>@i.Framework</dd>
+        <dt>Operating system</dt><dd>@i.OperatingSystem</dd>
+        <dt>Started (UTC)</dt><dd>@i.StartedUtc.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+        <dt>Uptime</dt><dd>@Uptime(i.Uptime)</dd>
+        <dt>Server time (UTC)</dt><dd>@i.ServerTimeUtc.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+    </dl>
+    <p class="muted small">Machine-readable endpoints: <a href="/health">/health</a> · <a href="/api/info">/api/info</a></p>
+</div>

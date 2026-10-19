@@ -1,0 +1,57 @@
+﻿@using Microsoft.Extensions.Options
+@using GpaCalculator.Models
+@using GpaCalculator.Services
+@inject IOptions<StudentOptions> StudentOptions
+@inject DeploymentInfoProvider DeploymentInfo
+@{
+    var student = StudentOptions.Value;
+    var info = DeploymentInfo.Get();
+    var current = ViewContext.RouteData.Values["page"]?.ToString();
+    string Active(string page) => current == page ? "active" : "";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · GradeLens</title>
+    <meta name="description" content="Calculate your GPA and WAM and plan the marks you need. An ASP.NET Core app deployed to Azure App Service." />
+    <link rel="icon" href="~/favicon.ico" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="site-header">
+        <div class="wrap header-inner">
+            <a class="brand" asp-page="/Index">
+                <span class="brand-mark" aria-hidden="true">G</span>
+                <span class="brand-name">GradeLens</span>
+            </a>
+            <nav class="nav" aria-label="Main">
+                <a class="@Active("/Index")" asp-page="/Index">Calculator</a>
+                <a class="@Active("/Planner")" asp-page="/Planner">Planner</a>
+                <a class="@Active("/Status")" asp-page="/Status">Status</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="wrap main" role="main">
+        @RenderBody()
+    </main>
+
+    <footer class="site-footer">
+        <div class="wrap footer-inner">
+            <span>Built by <strong>@student.Name</strong>@(string.IsNullOrWhiteSpace(student.Id) ? "" : $" · {student.Id}")</span>
+            @if (!string.IsNullOrWhiteSpace(student.Unit))
+            {
+                <span>@student.Unit</span>
+            }
+            <span class="env-pill @(info.RunningOnAzure ? "is-azure" : "is-local")">
+                @(info.RunningOnAzure ? $"Azure App Service · {info.SiteName}" : "Running locally")
+            </span>
+        </div>
+    </footer>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

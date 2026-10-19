@@ -1,0 +1,151 @@
+﻿@page
+@model IndexModel
+@using GpaCalculator.Models
+@{
+    ViewData["Title"] = "GPA & WAM calculator";
+    var summary = Model.Summary;
+    var hasResult = summary is { Units.Count: > 0 };
+    var maxCount = hasResult ? Math.Max(1, summary!.GradeCounts.Values.Max()) : 1;
+}
+
+<section class="intro">
+    <p class="eyebrow">Calculator</p>
+    <h1>Work out your GPA and WAM</h1>
+    <p class="lede">Enter each unit's mark and credit points. Grades follow the Swinburne scale: HD 80+, D 70–79, C 60–69, P 50–59, N below 50. Blank rows are ignored.</p>
+</section>
+
+<div class="layout">
+    <form method="post" class="card" id="unit-form" novalidate>
+        <div asp-validation-summary="ModelOnly" class="alert"></div>
+
+        <div class="table-scroll">
+            <table class="units-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Unit code</th>
+                        <th scope="col">Unit name</th>
+                        <th scope="col" class="num">Credit pts</th>
+                        <th scope="col" class="num">Mark</th>
+                        <th scope="col"><span class="sr-only">Remove</span></th>
+                    </tr>
+                </thead>
+                <tbody id="unit-rows">
+                    @for (var i = 0; i < Model.Units.Count; i++)
+                    {
+                        <tr class="unit-row">
+                            <td data-label="Code"><input asp-for="Units[i].Code" placeholder="COS10009" autocomplete="off" aria-label="Unit code" /></td>
+                            <td data-label="Name"><input asp-for="Units[i].Name" placeholder="Unit name (optional)" autocomplete="off" aria-label="Unit name" /></td>
+                            <td class="num" data-label="Credit pts"><input asp-for="Units[i].CreditPoints" type="number" step="0.5" min="0.5" max="100" aria-label="Credit points" /></td>
+                            <td class="num" data-label="Mark">
+                                <input asp-for="Units[i].Mark" type="number" step="0.1" min="0" max="100" placeholder="%" aria-label="Mark" />
+                                <span asp-validation-for="Units[i].Mark" class="field-error"></span>
+                                <span asp-validation-for="Units[i].CreditPoints" class="field-error"></span>
+                            </td>
+                            <td class="rm"><button type="button" class="icon-btn" data-remove-row title="Remove unit" aria-label="Remove unit">×</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn btn-ghost" id="add-row">+ Add unit</button>
+            <button type="submit" class="btn btn-ghost" asp-page-handler="Sample" formnovalidate>Load sample</button>
+            <a class="btn btn-ghost" asp-page="/Index">Clear</a>
+            <button type="submit" class="btn btn-primary">Calculate</button>
+        </div>
+    </form>
+
+    <aside class="card scale">
+        <h2>Grade scale</h2>
+        <table class="scale-table">
+            <thead><tr><th>Grade</th><th class="num">Mark</th><th class="num">Points</th></tr></thead>
+            <tbody>
+                @foreach (var band in GradeScale.Bands)
+                {
+                    <tr>
+                        <td><span class="badge grade-@band.Code.ToLowerInvariant()">@band.Code</span> @band.Name</td>
+                        <td class="num">@(band.MinMark == 0 ? "0–49" : band.MinMark == 80 ? "80–100" : $"{band.MinMark}–{band.MinMark + 9}")</td>
+                        <td class="num">@band.GradePoint</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p class="muted small">GPA is the credit-point-weighted average of grade points. WAM is the credit-point-weighted average of marks.</p>
+    </aside>
+</div>
+
+@if (hasResult)
+{
+    <section class="results" id="results" aria-live="polite">
+        <div class="stats">
+            <div class="stat">
+                <span class="stat-label">GPA</span>
+                <span class="stat-value">@summary!.Gpa.ToString("0.00")<small> / 4</small></span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">WAM</span>
+                <span class="stat-value">@summary.Wam.ToString("0.00")</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Credit points</span>
+                <span class="stat-value">@summary.TotalCreditPoints.ToString("0.#")</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Passed</span>
+                <span class="stat-value">@summary.PassedCreditPoints.ToString("0.#")<small> cp</small></span>
+            </div>
+        </div>
+
+        <div class="layout">
+            <div class="card">
+                <h2>Unit breakdown</h2>
+                <div class="table-scroll">
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>Unit</th><th class="num">Credit pts</th><th class="num">Mark</th><th>Grade</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var unit in summary.Units)
+                            {
+                                <tr>
+                                    <td><strong>@unit.Code</strong> <span class="muted unit-name">@unit.Name</span></td>
+                                    <td class="num">@unit.CreditPoints.ToString("0.#")</td>
+                                    <td class="num">@unit.Mark.ToString("0.#")</td>
+                                    <td><span class="badge grade-@unit.Grade.Code.ToLowerInvariant()">@unit.Grade.Code</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Grade spread</h2>
+                <ul class="bars">
+                    @foreach (var band in GradeScale.Bands)
+                    {
+                        var count = summary.GradeCounts[band.Code];
+                        <li>
+                            <span class="bar-label">@band.Code</span>
+                            <span class="bar-track"><span class="bar-fill grade-@band.Code.ToLowerInvariant()" style="width:@(count * 100 / maxCount)%"></span></span>
+                            <span class="bar-count">@count</span>
+                        </li>
+                    }
+                </ul>
+                <a class="btn btn-ghost full" asp-page="/Planner"
+                   asp-route-wam="@summary.Wam" asp-route-cp="@summary.TotalCreditPoints">Plan a target WAM from here →</a>
+            </div>
+        </div>
+    </section>
+}
+
+<template id="row-template">
+    <tr class="unit-row">
+        <td data-label="Code"><input name="Units[__i__].Code" placeholder="COS10009" autocomplete="off" aria-label="Unit code" /></td>
+        <td data-label="Name"><input name="Units[__i__].Name" placeholder="Unit name (optional)" autocomplete="off" aria-label="Unit name" /></td>
+        <td class="num" data-label="Credit pts"><input name="Units[__i__].CreditPoints" type="number" step="0.5" min="0.5" max="100" value="12.5" aria-label="Credit points" /></td>
+        <td class="num" data-label="Mark"><input name="Units[__i__].Mark" type="number" step="0.1" min="0" max="100" placeholder="%" aria-label="Mark" /></td>
+        <td class="rm"><button type="button" class="icon-btn" data-remove-row title="Remove unit" aria-label="Remove unit">×</button></td>
+    </tr>
+</template>
